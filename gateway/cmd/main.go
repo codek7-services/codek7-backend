@@ -1,10 +1,16 @@
 package main
 
-import "github.com/lai0xn/codek-gateway/internal/infra"
+import (
+	"os"
+
+	"github.com/joho/godotenv"
+	"github.com/lai0xn/codek-gateway/internal/infra"
+	"github.com/lai0xn/codek-gateway/internal/server"
+)
 
 
 func main(){
-   
+  godotenv.Load()
   err := infra.RDBConnect()
   if err != nil {
     panic(err)
@@ -13,4 +19,6 @@ func main(){
   if err != nil {
     panic(err)
   }
+  s := server.NewServer(os.Getenv("PORT"))
+  s.Start()
 }

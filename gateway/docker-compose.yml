@@ -9,14 +9,15 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - redis
-      - rabbitmq
-    environment:
-      - REDIS_URL=redis:6379
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    env_file:
+      - .env.docker
     networks:
       - app-network
-
+  
   redis:
     image: redis:7-alpine
     container_name: redis
@@ -26,9 +27,14 @@ services:
       - redis_data:/data
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 30s
+      retries: 5
 
   rabbitmq:
-    image: rabbitmq:3-management-alpine
+    image: rabbitmq:3.13.7-management-alpine
     container_name: rabbitmq
     ports:
       - "5672:5672"
@@ -40,6 +46,11 @@ services:
       - rabbitmq_data:/var/lib/rabbitmq
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 5s
+      timeout: 30s
+      retries: 10
 
 volumes:
   redis_data:
