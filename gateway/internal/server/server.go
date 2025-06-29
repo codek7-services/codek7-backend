@@ -61,7 +61,6 @@ func (s *Server) setupMiddleware() {
 // setupRoutes configures all routes
 func (s *Server) setupRoutes() {
 	// Health check endpoint
-	s.router.Get("/health", s.handleHealth)
 	
 	
 	s.router.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
