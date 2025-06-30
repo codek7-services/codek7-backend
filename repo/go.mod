@@ -4,6 +4,7 @@ go 1.24.4
 
 require (
 	github.com/jackc/pgx/v5 v5.7.5
+	github.com/joho/godotenv v1.5.1
 	github.com/minio/minio-go/v7 v7.0.94
 	github.com/satori/go.uuid v1.2.0
 	google.golang.org/grpc v1.73.0
