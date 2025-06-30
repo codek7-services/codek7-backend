@@ -28,12 +28,13 @@ func (a API) UploadFile(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Printf("Receiving file: %s\n", handler.Filename)
 
-	// Read the entire file into memory
-	buf := make([][]byte, 0)
-	chunk := make([]byte, 32*1024)
+	chunkBuf := make([]byte, 32*1024)
+	videoID := uuid.New().String()
+	sem := make(chan struct{}, 10) // limit to 10 goroutines
+	index := 0
 
 	for {
-		n, err := file.Read(chunk)
+		n, err := file.Read(chunkBuf)
 		if err != nil && err != io.EOF {
 			log.Printf("❌ Error reading file: %v\n", err)
 			http.Error(w, `{"status":"error","message":"Error reading file"}`, http.StatusInternalServerError)
@@ -43,20 +44,18 @@ func (a API) UploadFile(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		// Copy the chunk because `chunk` is reused
-		cpy := make([]byte, n)
-		copy(cpy, chunk[:n])
-		buf = append(buf, cpy)
-	}
+		// copy to avoid data race
+		chunk := make([]byte, n)
+		copy(chunk, chunkBuf[:n])
 
-	videoID := uuid.New().String()
-
-	// Fire and forget processing
-	go func(chunks [][]byte, videoID string) {
-		for i, chunk := range chunks {
+		sem <- struct{}{}
+		go func(i int, chunk []byte) {
+			defer func() { <-sem }()
 			produceChunk(a.Producer, videoID, int32(i), chunk)
-		}
-	}(buf, videoID)
+		}(index, chunk)
+
+		index++
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -80,4 +79,3 @@ func produceChunk(producer *kafka.Writer, videoID string, index int32, chunk []b
 		fmt.Printf("✅ Sent chunk %d to Kafka\n", index)
 	}
 }
-
