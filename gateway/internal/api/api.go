@@ -7,6 +7,6 @@ import (
 )
 
 type API struct {
-	Producer *kafka.Writer
-  RepoClient pb.RepoServiceClient
+	Producer   *kafka.Writer
+	RepoClient pb.RepoServiceClient
 }

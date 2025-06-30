@@ -9,14 +9,14 @@ option go_package = "codek7/common/pb";
 
 service RepoService {
   // User operations
-  rpc CreateUser (CreateUserRequest) returns (UserResponse);
-  rpc GetUser (GetUserRequest) returns (UserResponse);
+  rpc CreateUser(CreateUserRequest) returns (UserResponse);
+  rpc GetUser(GetUserRequest) returns (UserResponse);
   // Video operations
-  rpc UploadVideo (stream UploadVideoRequest) returns (VideoMetadataResponse);
-  rpc GetUserVideos (GetUserVideosRequest) returns (VideoListResponse);
-  rpc GetVideoByID (GetVideoRequest) returns (VideoMetadataResponse);
-  rpc DownloadVideo (DownloadVideoRequest) returns (stream VideoFileResponse);
-  rpc RemoveVideo (GetVideoRequest) returns (google.protobuf.Empty);
+  rpc UploadVideo(stream UploadVideoRequest) returns (VideoMetadataResponse);
+  rpc GetUserVideos(GetUserVideosRequest) returns (VideoListResponse);
+  rpc GetVideoByID(GetVideoRequest) returns (VideoMetadataResponse);
+  rpc DownloadVideo(DownloadVideoRequest) returns (stream VideoFileResponse);
+  rpc RemoveVideo(GetVideoRequest) returns (google.protobuf.Empty);
 }
 
 message CreateUserRequest {
@@ -51,6 +51,7 @@ message VideoMetadata {
 message VideoChunk {
   bytes data = 1;
   int32 chunk_number = 2;
+  string file_name = 3;
 }
 
 message GetUserVideosRequest {
@@ -62,7 +63,7 @@ message GetVideoRequest {
 }
 
 message DownloadVideoRequest {
-  string video_id = 1;
+  string file_name = 1;
 }
 
 message VideoMetadataResponse {
