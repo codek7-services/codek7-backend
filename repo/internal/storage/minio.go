@@ -41,7 +41,7 @@ func New(endpoint, accessKey, secretKey, bucket string, useSSL bool) (*MinioClie
 	}, nil
 }
 
-// Upload uploads a video file using objectKey (usually UUID)
+// Upload uploads a video file using objectKey
 func (m *MinioClient) Upload(ctx context.Context, objectKey string, content []byte) error {
 	_, err := m.client.PutObject(ctx, m.bucket, objectKey, bytes.NewReader(content), int64(len(content)), minio.PutObjectOptions{
 		ContentType: "video/mp4",
@@ -52,7 +52,7 @@ func (m *MinioClient) Upload(ctx context.Context, objectKey string, content []by
 	return nil
 }
 
-// Download retrieves the object using its UUID-based objectKey
+// Download retrieves the object using its objectKey
 func (m *MinioClient) Download(ctx context.Context, objectKey string) ([]byte, error) {
 	obj, err := m.client.GetObject(ctx, m.bucket, objectKey, minio.GetObjectOptions{})
 	if err != nil {

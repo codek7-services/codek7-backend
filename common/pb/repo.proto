@@ -2,7 +2,10 @@ syntax = "proto3";
 
 package repo;
 
+import "google/protobuf/empty.proto";
+
 option go_package = "codek7/common/pb";
+
 
 service RepoService {
   // User operations
@@ -13,6 +16,7 @@ service RepoService {
   rpc GetUserVideos (GetUserVideosRequest) returns (VideoListResponse);
   rpc GetVideoByID (GetVideoRequest) returns (VideoMetadataResponse);
   rpc DownloadVideo (DownloadVideoRequest) returns (stream VideoFileResponse);
+  rpc RemoveVideo (GetVideoRequest) returns (google.protobuf.Empty);
 }
 
 message CreateUserRequest {
