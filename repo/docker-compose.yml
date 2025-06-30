@@ -1,0 +1,61 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: repo-service
+    image: repo-service:latest
+    ports:
+      - "50051:50051"
+    depends_on:
+      - minio
+      - postgres
+    env_file:
+      - docker.env
+    networks:
+      - app-network
+    profiles:
+      - app
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio-data:/data
+    networks:
+      - app-network
+    command: server --console-address ":9001" /data
+    profiles:
+      - dev
+      - app
+
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: codek7
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    profiles:
+      - dev
+      - app
+
+volumes:
+  postgres_data:
+  minio-data:
+
+networks:
+  app-network:
+    driver: bridge
