@@ -17,6 +17,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      kafka:
+        condition: service_started
     networks:
       - app-network
   
