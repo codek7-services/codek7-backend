@@ -10,6 +10,7 @@ import (
 	"github.com/lumbrjx/codek7/repo/pkg/pb"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type RepoHandler struct {
@@ -168,4 +169,11 @@ func (h *RepoHandler) DownloadVideo(req *pb.DownloadVideoRequest, stream pb.Repo
 	}
 
 	return nil
+}
+
+func (h *RepoHandler) RemoveVideo(ctx context.Context, req *pb.GetVideoRequest) (*emptypb.Empty, error) {
+	if err := h.videoService.RemoveVideo(ctx, req.VideoId); err != nil {
+		return nil, status.Errorf(codes.Internal, "remove video failed: %v", err)
+	}
+	return &emptypb.Empty{}, nil
 }

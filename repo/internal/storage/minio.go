@@ -65,11 +65,18 @@ func (m *MinioClient) Download(ctx context.Context, objectKey string) ([]byte, e
 		}
 	}()
 
-
 	buf := new(bytes.Buffer)
 	if _, err = io.Copy(buf, obj); err != nil {
 		return nil, fmt.Errorf("copy object content failed: %w", err)
 	}
 
 	return buf.Bytes(), nil
+}
+
+func (m *MinioClient) Remove(ctx context.Context, objectKey string) error {
+	err := m.client.RemoveObject(ctx, m.bucket, objectKey, minio.RemoveObjectOptions{})
+	if err != nil {
+		return fmt.Errorf("remove object failed: %w", err)
+	}
+	return nil
 }

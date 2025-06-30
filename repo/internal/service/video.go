@@ -16,6 +16,7 @@ type VideoService interface {
 	GetVideoByID(ctx context.Context, videoID string) (*model.Video, error)
 	GetVideosByUser(ctx context.Context, userID string) ([]*model.Video, error)
 	DownloadVideo(ctx context.Context, videoID string) ([]byte, string, error)
+	RemoveVideo(ctx context.Context, videoID string) error
 }
 
 type videoService struct {
@@ -71,4 +72,21 @@ func (s *videoService) DownloadVideo(ctx context.Context, videoID string) ([]byt
 	}
 
 	return fileContent, objectKey, nil
+}
+
+func (s *videoService) RemoveVideo(ctx context.Context, videoID string) error {
+	video, err := s.repo.GetVideoByID(ctx, videoID)
+	if err != nil {
+		return fmt.Errorf("video not found: %w", err)
+	}
+
+	objectKey := fmt.Sprintf("%s.mp4", video.ID)
+
+	// Remove from MinIO
+	if err := s.store.Remove(ctx, objectKey); err != nil {
+		return fmt.Errorf("remove from MinIO failed: %w", err)
+	}
+
+	// Remove metadata
+	return s.repo.DeleteVideo(ctx, videoID)
 }
