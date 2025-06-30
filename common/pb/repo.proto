@@ -3,7 +3,9 @@ syntax = "proto3";
 package repo;
 
 import "google/protobuf/empty.proto";
-option go_package = "github.com/lumbrjx/codek7/repo/pkg/pb/";
+
+option go_package = "codek7/common/pb";
+
 
 service RepoService {
   // User operations
