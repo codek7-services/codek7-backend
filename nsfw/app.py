@@ -13,22 +13,23 @@ def main():
 def upload():
     print("Received a file upload request")
     if request.method == 'POST':
-        files = request.files.getlist("file")
+        # getting the video id from the post request
+        videoId = request.form.getlist("id")[0]
+        print(f"Video ID received: {videoId}")
+        filePath = getVideoById(videoId)
         # userID= request.files.getlist("userId")
-        for file in files:
-            file.save(f'./uploads/{file.filename}')
-            print(f"Processing video: {file.filename}")
-            # 1 if NSFW frame detected, 0 if not
-            isNSFW=handleFrameByFrame(f'./uploads/{file.filename}')
-            if isNSFW:
-                print(f"NSFW content detected in {file.filename}")
-                os.remove(f'./uploads/{file.filename}')
-                return jsonify({"isNSFW":True,"error": "NSFW content detected in the uploaded video."}), 200
-            else:
-                print(f"No NSFW content detected in {file.filename}")
-                os.remove(f'./uploads/{file.filename}')
-                return jsonify({"isNSFW":False,"message": "No NSFW content detected in the uploaded video."}), 200
-        return jsonify({"message":"file wasnt uploaded correctly"}), 400,
+        print(f"Processing video: {videoId}")
+        # 1 if NSFW frame detected, 0 if not
+        isNSFW=handleFrameByFrame(filePath)
+        if isNSFW:
+            print(f"NSFW content detected in {filePath}")
+            os.remove(filePath)
+            return jsonify({"isNSFW":True,"error": "NSFW content detected in the uploaded video."}), 200
+        else:
+            print(f"No NSFW content detected in {filePath}")
+            # os.remove(filePath)
+            return jsonify({"isNSFW":False,"message": "No NSFW content detected in the uploaded video."}), 200
+    return jsonify({"message":"file wasnt uploaded correctly"}), 400,
 
 
 if __name__ == '__main__':
