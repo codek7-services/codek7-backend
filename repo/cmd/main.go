@@ -68,14 +68,7 @@ func main() {
 
 	// video repository
 	vr := repository.NewVideoRepository(conn)
-	if err != nil {
-		log.Fatalf("Failed to init Postgres: %v", err)
-	}
-
 	ur := repository.NewUserRepository(conn)
-	if err != nil {
-		log.Fatalf("Failed to init Postgres: %v", err)
-	}
 
 	// === Services ===
 	videoService := service.NewVideoService(vr, minioClient)
