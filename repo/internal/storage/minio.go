@@ -58,7 +58,13 @@ func (m *MinioClient) Download(ctx context.Context, objectKey string) ([]byte, e
 	if err != nil {
 		return nil, fmt.Errorf("get object failed: %w", err)
 	}
-	defer obj.Close()
+	defer func() {
+		err = obj.Close()
+		if err != nil {
+			fmt.Printf("failed to close object: %v\n", err)
+		}
+	}()
+
 
 	buf := new(bytes.Buffer)
 	if _, err = io.Copy(buf, obj); err != nil {
