@@ -37,7 +37,7 @@ func NewServer(port string) *Server {
 	s := &Server{
 		router: chi.NewRouter(),
 		port:   port,
-		api:    &api.API{Producer: kafkaProducer}, 
+		api:    &api.API{Producer: kafkaProducer},
 	}
 
 	s.setupMiddleware()
@@ -52,8 +52,9 @@ func (s *Server) setupMiddleware() {
 	s.router.Use(middleware.Recoverer)
 	s.router.Use(middleware.RequestID)
 	s.router.Use(middleware.RealIP)
+	s.router.Use(middleware.SetHeader("Content-Type", "application/json"))
 	s.router.Use(middleware.Timeout(60 * time.Second))
-  s.router.Use(middlewares.RateLimitMiddleware(infra.GetRDB(),10,time.Minute * 1))
+	s.router.Use(middlewares.RateLimitMiddleware(infra.GetRDB(), 10, time.Minute*1))
 	// CORS middleware
 	s.router.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -78,6 +79,11 @@ func (s *Server) setupRoutes() {
   s.router.Get("/videos/{video_id}/download",s.api.DownloadVideo)
   s.router.Get("/videos/{video_id}",s.api.GetVideoByID)
 	s.router.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
+
+	// Auth routes
+	s.router.Post("/auth/login", s.api.LoginHandler)
+	s.router.Post("/auth/logout", s.api.LogoutHandler)
+	s.router.Post("/auth/register", s.api.RegisterHandler)
 }
 
 // Start starts the HTTP server
