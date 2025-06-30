@@ -1,3 +1,9 @@
 package api
 
-type API struct {}
+import (
+	"github.com/segmentio/kafka-go"
+)
+
+type API struct {
+	Producer *kafka.Writer
+}

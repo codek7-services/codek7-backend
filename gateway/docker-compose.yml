@@ -6,6 +6,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: go-app
+    profiles:
+      - app
     env_file:
       - .env.docker
     ports:
@@ -15,8 +17,6 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-    env_file:
-      - .env.docker
     networks:
       - app-network
   
@@ -73,6 +73,7 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
