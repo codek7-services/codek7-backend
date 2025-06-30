@@ -1,0 +1,39 @@
+[package]
+name = "vcodec"
+version = "0.1.0"
+edition = "2021"
+description = "A high-performance multi-quality video and photo processor using Rust and FFmpeg."
+license = "MIT"
+keywords = ["video", "photo", "ffmpeg", "processing", "async"]
+categories = ["multimedia", "command-line-utilities"]
+
+[dependencies]
+tokio = { version = "1.0", features = ["full"] }
+anyhow = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+futures = "0.3"
+uuid = { version = "1.0", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+log = "0.4"
+env_logger = "0.10"
+thiserror = "1.0"
+rayon = "1.8"
+
+[dev-dependencies]
+tempfile = "3.0"
+tokio-test = "0.4"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[profile.dev]
+opt-level = 0
+debug = true
+
+[lib]
+name = "media_processor"
+path = "src/lib.rs"
