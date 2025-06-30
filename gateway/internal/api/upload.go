@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/google/uuid"
@@ -28,47 +29,84 @@ func (a API) UploadFile(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Printf("Receiving file: %s\n", handler.Filename)
 
-	chunkBuf := make([]byte, 32*1024)
+	tmpFile, err := os.CreateTemp("", "upload-*.mp4")
+	if err != nil {
+		http.Error(w, `{"status":"error","message":"Failed to create temp file"}`, http.StatusInternalServerError)
+		return
+	}
+	defer tmpFile.Close()
+
+	// Stream file content to disk
+	_, err = io.Copy(tmpFile, file)
+	if err != nil {
+		http.Error(w, `{"status":"error","message":"Failed to save file"}`, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusAccepted)
+	w.Write([]byte(`{"status":"success","message":"File received and processing started"}`))
+
+	// Start async processing
+	go processFile(a.Producer, tmpFile.Name())
+}
+
+func processFile(producer *kafka.Writer, filePath string) {
+	defer os.Remove(filePath)
+
 	videoID := uuid.New().String()
-	sem := make(chan struct{}, 10) // limit to 10 goroutines
-	index := 0
+	sem := make(chan struct{}, 10)
+	chunkBuf := make([]byte, 32*1024)
+
+	f, err := os.Open(filePath)
+	if err != nil {
+		log.Printf("❌ Failed to open file: %v", err)
+		return
+	}
+	defer f.Close()
+
+	var chunks [][]byte
 
 	for {
-		n, err := file.Read(chunkBuf)
+		n, err := f.Read(chunkBuf)
 		if err != nil && err != io.EOF {
-			log.Printf("❌ Error reading file: %v\n", err)
-			http.Error(w, `{"status":"error","message":"Error reading file"}`, http.StatusInternalServerError)
+			log.Printf("❌ Error reading chunk: %v", err)
 			return
 		}
 		if n == 0 {
 			break
 		}
 
-		// copy to avoid data race
 		chunk := make([]byte, n)
 		copy(chunk, chunkBuf[:n])
-
-		sem <- struct{}{}
-		go func(i int, chunk []byte) {
-			defer func() { <-sem }()
-			produceChunk(a.Producer, videoID, int32(i), chunk)
-		}(index, chunk)
-
-		index++
+		chunks = append(chunks, chunk)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"status":"success","message":"File is being processed"}`))
+	totalChunks := len(chunks)
+	fmt.Printf("📦 Total chunks: %d\n", totalChunks)
+
+	for i, chunk := range chunks {
+		sem <- struct{}{}
+		go func(idx int, data []byte) {
+			defer func() { <-sem }()
+			produceChunk(producer, videoID, int32(idx), int32(totalChunks), data, filePath)
+		}(i, chunk)
+	}
+
+	// Wait for all goroutines to finish
+	for i := 0; i < cap(sem); i++ {
+		sem <- struct{}{}
+	}
 }
 
-
-func produceChunk(producer *kafka.Writer, videoID string, index int32, chunk []byte) {
+func produceChunk(producer *kafka.Writer, videoID string, index int32, totalChunks int32, chunk []byte, filepath string) {
 	msg := kafka.Message{
 		Key:   []byte(videoID),
 		Value: chunk,
 		Headers: []kafka.Header{
 			{Key: "chunk_index", Value: []byte(strconv.Itoa(int(index)))},
+			{Key: "total_chunks", Value: []byte(strconv.Itoa(int(totalChunks)))},
+			{Key: "file_path", Value: []byte(filepath)},
 		},
 	}
 
@@ -76,6 +114,7 @@ func produceChunk(producer *kafka.Writer, videoID string, index int32, chunk []b
 	if err != nil {
 		fmt.Printf("❌ Failed to send chunk %d: %v\n", index, err)
 	} else {
-		fmt.Printf("✅ Sent chunk %d to Kafka\n", index)
+		fmt.Printf("✅ Sent chunk %d/%d to Kafka\n", index+1, totalChunks)
 	}
 }
+
