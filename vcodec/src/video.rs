@@ -24,7 +24,7 @@ pub async fn save_video(video_id: &str, chunks: &HashMap<ChunkIndex, Vec<u8>>) {
 /// Generate downscaled videos at specified resolutions.
 /// Each resolution is a tuple: (target_height, crf_quality)
 pub fn generate_resolutions(input_file: &str, filename: &str, resolutions: &'static [(u32, u8)]) -> Vec<String> {
-    let paths: Vec<String> = resolutions
+    let mut paths: Vec<String> = resolutions
         .par_iter()
         .filter_map(|(height, crf)| {
             let output_file = format!("{}_{}p.mp4", filename, height);
@@ -62,9 +62,9 @@ pub fn generate_resolutions(input_file: &str, filename: &str, resolutions: &'sta
         })
         .collect();
 
-    // Now you have all successfully created paths
+    paths.push(input_file.to_string());
     println!("📁 Generated files: {:?}", paths);
-    return paths;
+    paths
 }
 
 

@@ -6,6 +6,7 @@ description = "A high-performance multi-quality video and photo processor using 
 license = "MIT"
 keywords = ["video", "photo", "ffmpeg", "processing", "async"]
 categories = ["multimedia", "command-line-utilities"]
+build = "build.rs" 
 
 [dependencies]
 tokio = { version = "1.0", features = ["full"] }
@@ -17,10 +18,15 @@ uuid = { version = "1.0", features = ["v4"] }
 rdkafka = { version = "0.34", features = ["tokio"] }
 chrono = { version = "0.4", features = ["serde"] }
 tokio-stream = "0.1"
+tonic = { version = "0.11", features = ["transport"] }
+prost = "0.12"
 log = "0.4"
 env_logger = "0.10"
 thiserror = "1.0"
 rayon = "1.8"
+
+[build-dependencies]
+tonic-build = "0.11"
 
 [dev-dependencies]
 tempfile = "3.0"
