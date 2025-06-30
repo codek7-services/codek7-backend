@@ -13,6 +13,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/lai0xn/codek-gateway/internal/api"
 	"github.com/lai0xn/codek-gateway/internal/infra"
+	"github.com/lai0xn/codek-gateway/internal/middlewares"
 )
 
 type Server struct {
@@ -52,7 +53,7 @@ func (s *Server) setupMiddleware() {
 	s.router.Use(middleware.RequestID)
 	s.router.Use(middleware.RealIP)
 	s.router.Use(middleware.Timeout(60 * time.Second))
-
+  s.router.Use(middlewares.RateLimitMiddleware(infra.GetRDB(),10,time.Minute * 1))
 	// CORS middleware
 	s.router.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
