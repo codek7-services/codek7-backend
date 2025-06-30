@@ -6,6 +6,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: go-app
+    env_file:
+      - .env.docker
     ports:
       - "8080:8080"
     depends_on:
@@ -20,6 +22,8 @@ services:
   redis:
     image: redis:7-alpine
     container_name: redis
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
     ports:
       - "6379:6379"
     volumes:
@@ -29,7 +33,6 @@ services:
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
-    container_name: rabbitmq
     ports:
       - "5672:5672"
       - "15672:15672"

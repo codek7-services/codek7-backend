@@ -11,11 +11,14 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/lai0xn/codek-gateway/internal/api"
 )
 
 type Server struct {
 	router *chi.Mux
-	port   string }
+	port   string 
+	api *api.API
+}
 
 // NewServer creates a new server instance
 func NewServer(port string) *Server {
@@ -61,7 +64,8 @@ func (s *Server) setupMiddleware() {
 // setupRoutes configures all routes
 func (s *Server) setupRoutes() {
 	// Health check endpoint
-	s.router.Get("/health", s.handleHealth)
+	s.router.Get("/health", s.api.HealthCheck)
+	s.router.Post("/video", s.api.UploadFile)
 	
 	
 	s.router.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
