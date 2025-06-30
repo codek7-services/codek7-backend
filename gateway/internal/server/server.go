@@ -74,8 +74,9 @@ func (s *Server) setupMiddleware() {
 func (s *Server) setupRoutes() {
 	// Health check endpoint
 	s.router.Get("/health", s.api.HealthCheck)
-	s.router.Post("/video", s.api.UploadFile)
-
+	s.router.Post("/videos/upload", s.api.UploadFile)
+  s.router.Get("/videos/{video_id}/download",s.api.DownloadVideo)
+  s.router.Get("/videos/{video_id}",s.api.GetVideoByID)
 	s.router.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
 }
 
