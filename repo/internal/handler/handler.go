@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/lumbrjx/codek7/repo/internal/service"
-	"github.com/lumbrjx/codek7/repo/pkg/pb/pkg/pb"
+	"github.com/lumbrjx/codek7/repo/pkg/pb"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

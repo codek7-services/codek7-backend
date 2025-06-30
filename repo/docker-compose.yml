@@ -11,7 +11,7 @@ services:
       - minio
       - postgres
     env_file:
-      - docker.env
+      - .env.docker
     networks:
       - app-network
     profiles:
