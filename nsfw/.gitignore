@@ -1,0 +1,19 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+nsfw_env/
+
+# Model files
+*.pt
+*.pth
+*.bin
+models/
+.cache/
+
+# Uploaded files
+uploads/
+
+# Local configuration
+.env
