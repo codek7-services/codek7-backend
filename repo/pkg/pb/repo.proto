@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package repo;
 
+import "google/protobuf/empty.proto";
 option go_package = "github.com/lumbrjx/codek7/repo/pkg/pb/";
 
 service RepoService {
@@ -13,6 +14,7 @@ service RepoService {
   rpc GetUserVideos (GetUserVideosRequest) returns (VideoListResponse);
   rpc GetVideoByID (GetVideoRequest) returns (VideoMetadataResponse);
   rpc DownloadVideo (DownloadVideoRequest) returns (stream VideoFileResponse);
+  rpc RemoveVideo (GetVideoRequest) returns (google.protobuf.Empty);
 }
 
 message CreateUserRequest {

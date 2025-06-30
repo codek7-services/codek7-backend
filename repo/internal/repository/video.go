@@ -13,6 +13,7 @@ type VideoRepository interface {
 	CreateVideo(ctx context.Context, v *model.Video) (*model.Video, error)
 	GetVideoByID(ctx context.Context, videoID string) (*model.Video, error)
 	GetVideosByUser(ctx context.Context, userID string) ([]*model.Video, error)
+	DeleteVideo(ctx context.Context, videoID string) error
 }
 
 type videoRepo struct {
@@ -62,4 +63,13 @@ func (r *videoRepo) GetVideosByUser(ctx context.Context, userID string) ([]*mode
 		videos = append(videos, &v)
 	}
 	return videos, nil
+}
+
+func (r *videoRepo) DeleteVideo(ctx context.Context, videoID string) error {
+	query := `DELETE FROM videos WHERE id=$1`
+	_, err := r.db.Exec(ctx, query, videoID)
+	if err != nil {
+		return fmt.Errorf("delete video failed: %w", err)
+	}
+	return nil
 }
