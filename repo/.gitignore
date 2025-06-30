@@ -1,4 +1,1 @@
-.env
-.env.*
-*.env
 *.pb.go
