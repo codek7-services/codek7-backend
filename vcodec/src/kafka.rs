@@ -1,6 +1,6 @@
-use crate::consts::RESOLUTIONS;
+use crate::consts::{NSFW_RESOLUTIONS, RESOLUTIONS};
 use crate::repo::{upload_video_request::Data, UploadVideoRequest, VideoChunk, VideoMetadata};
-use crate::video::{generate_resolutions, save_video};
+use crate::video::{generate_resolutions, generate_segments, save_video};
 use rdkafka::config::ClientConfig;
 use rdkafka::consumer::{Consumer, StreamConsumer};
 use rdkafka::message::Headers;
@@ -20,7 +20,7 @@ use tonic::Request;
 type ChunkIndex = usize;
 type TotalChunks = usize;
 
-pub async fn consume_video_chunks(rpc_client: crate::rpc::RpcClient) {
+pub async fn consume_video_chunks(rpc_client: crate::rpc::RpcClient, rmq: crate::rmq::RabbitMQ) {
     let (version_n, version_s) = get_rdkafka_version();
     println!("🌀 rdkafka version: 0x{:08x}, {}", version_n, version_s);
 
@@ -94,12 +94,17 @@ pub async fn consume_video_chunks(rpc_client: crate::rpc::RpcClient) {
                     if entry.0.len() == total {
                         println!("✅ Received all chunks for video '{}'. Saving...", video_id);
                         save_video(&video_id, &entry.0).await;
-                        let file_paths = generate_resolutions(
+                        let mut file_paths = generate_segments(
                             format!("{}.mp4", &video_id).as_str(),
                             &video_id,
                             RESOLUTIONS,
                         );
-
+                        let to_nsfw_path = generate_resolutions(
+                            format!("{}.mp4", &video_id).as_str(),
+                            &video_id,
+                            NSFW_RESOLUTIONS,
+                        );
+                        file_paths.extend(to_nsfw_path);
                         let rpc = rpc_client.get_client();
 
                         println!("📦 Uploading generated files...");
@@ -110,10 +115,7 @@ pub async fn consume_video_chunks(rpc_client: crate::rpc::RpcClient) {
 
                         // Fixed version of your upload loop
                         for path in &file_paths {
-                            let file_name = Path::new(path)
-                                .file_name()
-                                .and_then(|s| s.to_str())
-                                .unwrap_or("unknown.mp4");
+                            let file_name = path;
 
                             let file_size = tokio::fs::metadata(path)
                                 .await
@@ -201,16 +203,13 @@ pub async fn consume_video_chunks(rpc_client: crate::rpc::RpcClient) {
                                     chunk_number += 1;
                                 }
 
-                                // Explicitly close file by dropping reader
                                 drop(reader);
 
-                                // Close the sender to signal end of stream
                                 drop(tx);
 
                                 if !chunk_send_success {
                                     None
                                 } else {
-                                    // Now upload THIS specific file
                                     println!(
                                         "📡 Uploading {} via gRPC... (total chunks: {})",
                                         file_name, chunk_number
@@ -223,22 +222,21 @@ pub async fn consume_video_chunks(rpc_client: crate::rpc::RpcClient) {
                                 }
                             };
 
-                            // Handle upload result
                             match upload_result {
                                 Some(Ok(res)) => {
                                     println!("✅ Upload complete for {}: {:?}", file_name, res);
+                                    println!("✅ Upload dd for {}: {:?}", file_name, path);
 
-                                    // Use async file deletion with the full path
-                                    match tokio::fs::remove_file(path).await {
-                                        Ok(_) => println!(
-                                            "📁 Video file {} deleted successfully.",
-                                            file_name
-                                        ),
-                                        Err(e) => eprintln!(
-                                            "❌ Failed to delete video {}: {}",
-                                            file_name, e
-                                        ),
-                                    }
+                                    // match tokio::fs::remove_file(path).await {
+                                    //     Ok(_) => println!(
+                                    //         "📁 Video file {} deleted successfully.",
+                                    //         file_name
+                                    //     ),
+                                    //     Err(e) => eprintln!(
+                                    //         "❌ Failed to delete video {}: {}",
+                                    //         file_name, e
+                                    //     ),
+                                    // }
                                 }
                                 Some(Err(e)) => {
                                     eprintln!("❌ Upload failed for {}: {}", file_name, e);
@@ -254,7 +252,38 @@ pub async fn consume_video_chunks(rpc_client: crate::rpc::RpcClient) {
                             // Add a small delay to prevent overwhelming the system
                             tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
                         }
+                        let to_nsfw_path = generate_resolutions(
+                            format!("{}.mp4", &video_id).as_str(),
+                            &video_id,
+                            NSFW_RESOLUTIONS,
+                        );
+
+                        let _ = rmq
+                            .send_message("verify_nsfw", to_nsfw_path[0].as_bytes())
+                            .await;
+
                         map.remove(&video_id);
+
+                        match tokio::fs::remove_dir_all(&video_id).await {
+                            Ok(_) => {
+                                println!("📁 Directory {:?} deleted successfully.", &video_id);
+                            }
+                            Err(e) => {
+                                eprintln!("❌ Failed to delete directory {:?}: {}", &video_id, e)
+                            }
+                        }
+                        match tokio::fs::remove_file(format!("{}_master.m3u8", &video_id)).await {
+                            Ok(_) => println!("📁 Video file {} deleted successfully.", &video_id),
+                            Err(e) => eprintln!("❌ Failed to delete video {}: {}", &video_id, e),
+                        }
+                        match tokio::fs::remove_file(format!("{}_360p.mp4", &video_id)).await {
+                            Ok(_) => println!("📁 Video file {} deleted successfully.", &video_id),
+                            Err(e) => eprintln!("❌ Failed to delete video {}: {}", &video_id, e),
+                        }
+                        match tokio::fs::remove_file(format!("{}.mp4", &video_id)).await {
+                            Ok(_) => println!("📁 Video file {} deleted successfully.", &video_id),
+                            Err(e) => eprintln!("❌ Failed to delete video {}: {}", &video_id, e),
+                        }
                     }
                 }
             }
@@ -262,4 +291,3 @@ pub async fn consume_video_chunks(rpc_client: crate::rpc::RpcClient) {
         }
     }
 }
-
