@@ -65,7 +65,6 @@ func (m *MinioClient) Download(ctx context.Context, objectKey string) ([]byte, e
 		}
 	}()
 
-
 	buf := new(bytes.Buffer)
 	if _, err = io.Copy(buf, obj); err != nil {
 		return nil, fmt.Errorf("copy object content failed: %w", err)

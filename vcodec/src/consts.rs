@@ -6,4 +6,7 @@ pub const RESOLUTIONS: &[(u32, u8)] = &[
     (720, 23),
     (1080, 20),
 ];
+pub const NSFW_RESOLUTIONS: &[(u32, u8)] = &[
+    (360, 29),
+];
 
