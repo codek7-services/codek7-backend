@@ -168,6 +168,7 @@ pub fn generate_resolutions(input_file: &str, filename: &str, resolutions: &'sta
         })
         .collect();
 
+    paths.push(input_file.to_string());
     println!("📁 Generated files: {:?}", paths);
     paths
 }

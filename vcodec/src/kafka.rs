@@ -7,8 +7,6 @@ use rdkafka::message::Headers;
 use rdkafka::message::Message;
 use rdkafka::util::get_rdkafka_version;
 use std::collections::HashMap;
-use std::fs;
-use std::path::Path;
 use std::sync::{Arc, Mutex};
 use tokio::fs::File;
 use tokio::io::{AsyncReadExt, BufReader};
@@ -104,7 +102,7 @@ pub async fn consume_video_chunks(rpc_client: crate::rpc::RpcClient, rmq: crate:
                             &video_id,
                             NSFW_RESOLUTIONS,
                         );
-                        file_paths.extend(to_nsfw_path);
+                        file_paths.extend(to_nsfw_path.clone());
                         let rpc = rpc_client.get_client();
 
                         println!("📦 Uploading generated files...");
@@ -252,11 +250,6 @@ pub async fn consume_video_chunks(rpc_client: crate::rpc::RpcClient, rmq: crate:
                             // Add a small delay to prevent overwhelming the system
                             tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
                         }
-                        let to_nsfw_path = generate_resolutions(
-                            format!("{}.mp4", &video_id).as_str(),
-                            &video_id,
-                            NSFW_RESOLUTIONS,
-                        );
 
                         let _ = rmq
                             .send_message("verify_nsfw", to_nsfw_path[0].as_bytes())
