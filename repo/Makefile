@@ -1,5 +1,13 @@
 .PHONY: dev docker-prod docker-stop docker-dev docker-dev-stop rebuild logs proto test fmt lint clean
 
+goose-up:
+	@echo " > Running database migrations...  "
+	goose -dir db/migrations postgres "postgres://user:password@localhost:5432/codek7?sslmode=disable" up
+
+goose-down:
+	@echo " > Rolling back database migrations...  "
+	goose -dir db/migrations postgres "postgres://user:password@localhost:5432/codek7?sslmode=disable" down
+
 dev:
 	@echo " > Running app locally with Docker-based Postgres + MinIO...  "
 	docker compose --profile dev up -d
