@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package repo;
 
-option go_package = "github.com/lumbrjx/codek7/common";
+option go_package = "codek7/common/pb";
 
 service RepoService {
   // User operations
