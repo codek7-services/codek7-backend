@@ -83,7 +83,7 @@ func (s *Server) setupRoutes() {
 	s.router.Get("/videos/{video_id}/download", s.api.DownloadVideo)
 	s.router.Get("/videos/{video_id}", s.api.GetVideoByID)
 	s.router.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
-	s.router.Get("/hls/*", s.api.StreamFromMinIO)
+	s.router.With().Get("/hls/*", s.api.StreamFromMinIO)
 	// Auth routes
 	// s.router.Post("/auth/login", s.api.LoginHandler)
 	// s.router.Post("/auth/logout", s.api.LogoutHandler)
