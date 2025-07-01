@@ -57,6 +57,9 @@ pub async fn consume_video_chunks(rpc_client: crate::rpc::RpcClient, rmq: crate:
                 let mut chunk_index: Option<usize> = None;
                 let mut total_chunks: Option<usize> = None;
                 let mut file_path: Option<usize> = None;
+                let mut title: Option<String> = None;
+                let mut user_id: Option<String> = None;
+                let mut description: Option<String> = None;
 
                 if let Some(headers) = msg.headers() {
                     for i in 0..headers.count() {
@@ -75,6 +78,25 @@ pub async fn consume_video_chunks(rpc_client: crate::rpc::RpcClient, rmq: crate:
                             "file_path" => {
                                 if let Some(val) = header.value {
                                     file_path = String::from_utf8_lossy(val).parse().ok();
+                                }
+                            }
+                            "user_id" => {
+                                if let Some(val) = header.value {
+                                    user_id = String::from_utf8_lossy(val).parse().ok();
+
+                                    println!("user_id: {:?}", user_id);
+                                }
+                            }
+                            "title" => {
+                                if let Some(val) = header.value {
+                                    title = String::from_utf8_lossy(val).parse().ok();
+                                    println!("title: {:?}", title);
+                                }
+                            }
+                            "description" => {
+                                if let Some(val) = header.value {
+                                    description = String::from_utf8_lossy(val).parse().ok();
+                                    println!("description: {:?}", description);
                                 }
                             }
                             _ => {}
@@ -115,17 +137,16 @@ pub async fn consume_video_chunks(rpc_client: crate::rpc::RpcClient, rmq: crate:
                         for path in &file_paths {
                             let file_name = path;
 
+                            println!("📦 Uploading file: {}", file_name);
+
                             let file_size = tokio::fs::metadata(path)
                                 .await
                                 .map(|m| m.len())
                                 .unwrap_or(0);
 
-                            let resolution = file_name
-                                .split('_')
-                                .last()
-                                .unwrap_or("")
-                                .replace(".mp4", "");
-                            let title = format!("{:?} {}", file_path, resolution);
+                            let title_ = format!("{}", title.as_deref().unwrap_or("Untitled"),);
+                            let user_id_ = user_id.as_deref().unwrap_or("unknown").to_string();
+                            let description_ = description.as_deref().unwrap_or("").to_string();
 
                             // Create a NEW channel for EACH file
                             let (tx, rx) = mpsc::channel(16); // Increased buffer size
@@ -134,9 +155,9 @@ pub async fn consume_video_chunks(rpc_client: crate::rpc::RpcClient, rmq: crate:
                             println!("➡️ Sending metadata for {}", file_name);
                             let metadata = UploadVideoRequest {
                                 data: Some(Data::Metadata(VideoMetadata {
-                                    user_id: "0055d3bd-9fe3-4689-83c2-413b8a7e87ab".to_string(),
-                                    title,
-                                    description: "Generated resolution upload".into(),
+                                    user_id: user_id_.to_string(),
+                                    title: title_.to_string(),
+                                    description: description_.to_string(),
                                     file_name: file_name.to_string(),
                                     file_size: file_size as i64,
                                 })),
@@ -185,6 +206,7 @@ pub async fn consume_video_chunks(rpc_client: crate::rpc::RpcClient, rmq: crate:
                                         data: Some(Data::Chunk(VideoChunk {
                                             chunk_number,
                                             data: buffer[..bytes_read].to_vec(),
+                                            file_name: video_id.clone(),
                                         })),
                                     };
 

@@ -111,6 +111,9 @@ func processFile(producer *kafka.Writer, filePath string, userID, title, descrip
 }
 
 func produceChunk(producer *kafka.Writer, videoID string, index int32, totalChunks int32, chunk []byte, filepath string, userID, title, description string) {
+	println("got user id: ", userID)
+	println("got title: ", title)
+	println("got description: ", description)
 	msg := kafka.Message{
 		Key:   []byte(videoID),
 		Value: chunk,
