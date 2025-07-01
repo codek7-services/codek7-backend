@@ -21,16 +21,19 @@ service RepoService {
 
 message CreateUserRequest {
   string username = 1;
+  string email = 2;
+  string password = 3;
 }
 
 message GetUserRequest {
-  string user_id = 1;
+  string username = 1;
 }
 
 message UserResponse {
   string id = 1;
   string username = 2;
-  string created_at = 3;
+  string password = 3;
+  string created_at = 4;
 }
 
 message UploadVideoRequest {
