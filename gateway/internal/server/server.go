@@ -131,6 +131,8 @@ func (s *Server) setupRoutes() {
 		r.Get("/notifications", s.api.WebSocketHandler)
 	})
 
+	s.router.Get("/er/:user_id" , s.api.ErHandler)
+
 	// Auth routes
 	s.router.Post("/auth/login", s.api.Login)
 	s.router.Post("/auth/logout", s.api.Logout)

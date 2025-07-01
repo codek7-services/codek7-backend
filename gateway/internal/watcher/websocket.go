@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
-	"github.com/lumbrjx/codek7/gateway/pkg/utils"
 )
 
 var upgrader = websocket.Upgrader{
@@ -18,10 +17,10 @@ var upgrader = websocket.Upgrader{
 
 // HandleWebSocket handles WebSocket connections
 func (h *Hub) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
-	// Get user ID middleware context
-	userID, ok := utils.GetUserID(r.Context())
-	if !ok {
-		http.Error(w, "Unauthorized: Missing user ID", http.StatusUnauthorized)
+	// Get user ID from path
+	userID := r.URL.Query().Get("user_id")
+	if userID == "" {
+		http.Error(w, "user_id query parameter is required", http.StatusBadRequest)
 		return
 	}
 
