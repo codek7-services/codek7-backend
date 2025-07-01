@@ -4,7 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"codek7/common"
+	"codek7/common/pb"
+
 	"github.com/lumbrjx/codek7/gateway/pkg/utils"
 )
 
