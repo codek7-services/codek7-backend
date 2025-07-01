@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/websocket"
+	"github.com/lumbrjx/codek7/gateway/pkg/utils"
 )
 
 var upgrader = websocket.Upgrader{
@@ -18,11 +19,20 @@ var upgrader = websocket.Upgrader{
 
 // HandleWebSocket handles WebSocket connections
 func (h *Hub) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
-	// Get user ID from path
-	userID := chi.URLParam(r, "user_id")
-	if userID == "" {
-		http.Error(w, "user_id query parameter is required", http.StatusBadRequest)
-		return
+	var userID string
+	passedByMiddleware, ok := r.Context().Value("authPassed").(bool)
+	if passedByMiddleware && ok {
+		// If passed by middleware, get user ID from context
+		userID, ok := utils.GetUserID(r.Context())
+		if !ok || userID == "" {
+			http.Error(w, "user_id not found in context", http.StatusUnauthorized)
+		}
+	} else {
+		userID = chi.URLParam(r, "user_id")
+		if userID == "" {
+			http.Error(w, "user_id query parameter is required", http.StatusBadRequest)
+			return
+		}
 	}
 
 	// Upgrade HTTP connection to WebSocket

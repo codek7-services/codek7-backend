@@ -20,3 +20,9 @@ func GetUserID(ctx context.Context) (string, bool) {
 	userID, ok := ctx.Value(userIDKey).(string)
 	return userID, ok
 }
+
+// WithAuthPassed adds authentication status to a context
+func WithAuthPassed(ctx context.Context) context.Context {
+	return context.WithValue(ctx, contextKey("authPassed"), true)
+}
+

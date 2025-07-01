@@ -127,10 +127,11 @@ func (s *Server) setupRoutes() {
 	// WebSocket endpoint for notifications with auth
 	s.router.Route("/ws", func(r chi.Router) {
 		r.Use(middlewares.AuthMiddleware)
-		r.Get("/notifications", s.api.WebSocketHandler)
+		r.Get("/", s.api.WebSocketHandler)
 	})
 
-	s.router.Get("/er/{user_id}", s.api.ErHandler)
+	// No need to middleware here
+	s.router.Get("/ws/{user_id}", s.api.WebSocketHandler)
 
 	// Auth routes
 	s.router.Post("/auth/login", s.api.Login)

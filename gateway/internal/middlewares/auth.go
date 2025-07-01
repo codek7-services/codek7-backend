@@ -33,6 +33,8 @@ func AuthMiddleware(next http.Handler) http.Handler {
 
 		// Set user ID in context for use in handlers
 		ctx := utils.WithUserID(r.Context(), userID)
+		// mark that it passed by a middleware
+		ctx = utils.WithAuthPassed(ctx)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
