@@ -7,3 +7,7 @@ last 3 videos
 
 
 
+todo lai0xn:
+- fix docker issues
+- dockerize nsfw filter
+- api keys managment
