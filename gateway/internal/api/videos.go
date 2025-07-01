@@ -1,13 +1,15 @@
 package api
 
 import (
+	"codek7/common/pb"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-  "codek7/common/pb"
+
 	"github.com/go-chi/chi/v5"
+	"github.com/lumbrjx/codek7/gateway/pkg/utils"
 )
 
 func (a API) GetVideoByID(w http.ResponseWriter, r *http.Request) {
@@ -31,22 +33,30 @@ func (a API) GetVideoByID(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 func (a API) GetRecentUserVideos(w http.ResponseWriter, r *http.Request) {
-    userID := chi.URLParam(r, "user_id")
-    if userID == "" {
-        http.Error(w, "missing user_id", http.StatusBadRequest)
-        return
-    }
+	userID, ok := utils.GetUserID(r.Context())
+	if !ok {
+		http.Error(w, "User ID not found in context", http.StatusUnauthorized)
+		return
+	}
+	if userID == "" {
+		http.Error(w, "missing user_id", http.StatusBadRequest)
+		return
+	}
 
-    res, err := a.RepoClient.GetLast3UserVideos(context.Background(), &pb.GetLast3UserVideosRequest{UserId: userID})
-    if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
-        return
-    }
+	res, err := a.RepoClient.GetLast3UserVideos(context.Background(), &pb.GetLast3UserVideosRequest{UserId: userID})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-   json.NewEncoder(w).Encode(res)
+	json.NewEncoder(w).Encode(res)
 }
 func (a API) GetUserVideos(w http.ResponseWriter, r *http.Request) {
-	userID := chi.URLParam(r, "user_id")
+	userID, ok := utils.GetUserID(r.Context())
+	if !ok {
+		http.Error(w, "User ID not found in context", http.StatusUnauthorized)
+		return
+	}
 	if userID == "" {
 		http.Error(w, "missing user_id", http.StatusBadRequest)
 		return
