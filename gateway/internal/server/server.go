@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-
+  "codek7/common/pb"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/lumbrjx/codek7/gateway/internal/api"
@@ -33,14 +33,13 @@ func NewServer(port string) *Server {
 		log.Fatalf("Error: %v", err)
 		os.Exit(1)
 	}
-
-	if err != nil {
-		log.Fatalf("Error: %v", err)
-	}
+  grpcClient := pb.NewRepoServiceClient(
+    infra.MakeGRPCClientConn(), 
+  ) 
 	s := &Server{
 		router: chi.NewRouter(),
 		port:   port,
-		api:    &api.API{Producer: kafkaProducer},
+		api:    &api.API{Producer: kafkaProducer,RepoClient: grpcClient},
 	}
 
 	s.setupMiddleware()

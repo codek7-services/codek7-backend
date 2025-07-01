@@ -6,9 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-
+  "codek7/common/pb"
 	"github.com/go-chi/chi/v5"
-    "github.com/lumbrjx/codek7/gateway/pb"
 )
 
 func (a API) GetVideoByID(w http.ResponseWriter, r *http.Request) {
