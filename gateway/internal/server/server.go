@@ -11,8 +11,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/lai0xn/codek-gateway/internal/api"
-	"github.com/lai0xn/codek-gateway/internal/infra"
+	"github.com/lumbrjx/codek7/gateway/internal/api"
+	"github.com/lumbrjx/codek7/gateway/internal/infra"
 	// "github.com/lai0xn/codek-gateway/internal/middlewares"
 )
 

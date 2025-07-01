@@ -5,8 +5,8 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
-	"github.com/lai0xn/codek-gateway/internal/infra"
-	"github.com/lai0xn/codek-gateway/internal/server"
+	"github.com/lumbrjx/codek7/gateway/internal/infra"
+	"github.com/lumbrjx/codek7/gateway/internal/server"
 )
 
 var (
