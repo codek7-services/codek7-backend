@@ -1,5 +1,8 @@
 .PHONY: dev docker-prod docker-stop docker-dev docker-dev-stop rebuild logs proto test fmt lint clean
 
+gen-goose:
+	goose -dir db/migrations create $(GOOSE_NAME) sql
+
 goose-up:
 	@echo " > Running database migrations...  "
 	goose -dir db/migrations postgres "postgres://user:password@localhost:5432/codek7?sslmode=disable" up

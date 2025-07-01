@@ -85,9 +85,9 @@ func (s *Server) setupRoutes() {
 	s.router.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
 	s.router.With().Get("/hls/*", s.api.StreamFromMinIO)
 	// Auth routes
-	// s.router.Post("/auth/login", s.api.LoginHandler)
-	// s.router.Post("/auth/logout", s.api.LogoutHandler)
-	// s.router.Post("/auth/register", s.api.RegisterHandler)
+	s.router.Post("/auth/login", s.api.Login)
+	s.router.Post("/auth/logout", s.api.Logout)
+	s.router.Post("/auth/register", s.api.Register)
 }
 
 // Start starts the HTTP server
