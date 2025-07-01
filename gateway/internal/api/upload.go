@@ -20,6 +20,17 @@ func (a API) UploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get form fields
+	title := r.FormValue("title")
+	userID := r.FormValue("user_id")
+	description := r.FormValue("description")
+
+	if title == "" || userID == "" || description == "" {
+		http.Error(w, `{"status":"error","message":"Missing required fields: title, user_id, or description"}`, http.StatusBadRequest)
+		return
+	}
+
+	// Get the file from form
 	file, handler, err := r.FormFile("file")
 	if err != nil {
 		http.Error(w, `{"status":"error","message":"File not found in request"}`, http.StatusBadRequest)
@@ -29,6 +40,7 @@ func (a API) UploadFile(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Printf("Receiving file: %s\n", handler.Filename)
 
+	// Save file to temp location
 	tmpFile, err := os.CreateTemp("", "upload-*.mp4")
 	if err != nil {
 		http.Error(w, `{"status":"error","message":"Failed to create temp file"}`, http.StatusInternalServerError)
@@ -36,7 +48,6 @@ func (a API) UploadFile(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tmpFile.Close()
 
-	// Stream file content to disk
 	_, err = io.Copy(tmpFile, file)
 	if err != nil {
 		http.Error(w, `{"status":"error","message":"Failed to save file"}`, http.StatusInternalServerError)
@@ -48,10 +59,10 @@ func (a API) UploadFile(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"status":"success","message":"File received and processing started"}`))
 
 	// Start async processing
-	go processFile(a.Producer, tmpFile.Name())
+	go processFile(a.Producer, tmpFile.Name(), userID, title, description)
 }
 
-func processFile(producer *kafka.Writer, filePath string) {
+func processFile(producer *kafka.Writer, filePath string, userID, title, description string) {
 	defer os.Remove(filePath)
 
 	videoID := uuid.New().String()
@@ -89,7 +100,7 @@ func processFile(producer *kafka.Writer, filePath string) {
 		sem <- struct{}{}
 		go func(idx int, data []byte) {
 			defer func() { <-sem }()
-			produceChunk(producer, videoID, int32(idx), int32(totalChunks), data, filePath)
+			produceChunk(producer, videoID, int32(idx), int32(totalChunks), data, filePath, userID, title, description)
 		}(i, chunk)
 	}
 
@@ -99,7 +110,7 @@ func processFile(producer *kafka.Writer, filePath string) {
 	}
 }
 
-func produceChunk(producer *kafka.Writer, videoID string, index int32, totalChunks int32, chunk []byte, filepath string) {
+func produceChunk(producer *kafka.Writer, videoID string, index int32, totalChunks int32, chunk []byte, filepath string, userID, title, description string) {
 	msg := kafka.Message{
 		Key:   []byte(videoID),
 		Value: chunk,
@@ -107,6 +118,9 @@ func produceChunk(producer *kafka.Writer, videoID string, index int32, totalChun
 			{Key: "chunk_index", Value: []byte(strconv.Itoa(int(index)))},
 			{Key: "total_chunks", Value: []byte(strconv.Itoa(int(totalChunks)))},
 			{Key: "file_path", Value: []byte(filepath)},
+			{Key: "user_id", Value: []byte(userID)},
+			{Key: "title", Value: []byte(title)},
+			{Key: "description", Value: []byte(description)},
 		},
 	}
 
