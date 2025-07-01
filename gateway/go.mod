@@ -1,4 +1,4 @@
-module github.com/lai0xn/codek-gateway
+module github.com/lumbrjx/codek7/gateway
 
 go 1.24.1
 

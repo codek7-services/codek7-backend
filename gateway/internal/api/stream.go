@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/lai0xn/codek-gateway/internal/infra"
+	"github.com/lumbrjx/codek7/gateway/internal/infra"
 	"github.com/minio/minio-go/v7"
 )
 
