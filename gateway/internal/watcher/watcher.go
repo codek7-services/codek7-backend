@@ -34,7 +34,7 @@ func NewWatcher(hub *Hub) (*Watcher, error) {
 		hub:        hub,
 		connection: conn,
 		channel:    ch,
-		queueName:  "notifications",
+		queueName:  "notify.q",
 	}, nil
 }
 
