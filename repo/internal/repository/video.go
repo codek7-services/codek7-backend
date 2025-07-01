@@ -26,9 +26,9 @@ func NewVideoRepository(pool *pgxpool.Pool) VideoRepository {
 }
 
 func (r *videoRepo) CreateVideo(ctx context.Context, v *model.Video) (*model.Video, error) {
-	query := `INSERT INTO videos (id, user_id, title, description, created_at)
-	          VALUES ($1, $2, $3, $4, $5)`
-	_, err := r.db.Exec(ctx, query, v.ID, v.UserID, v.Title, v.Description, v.CreatedAt)
+	query := `INSERT INTO videos (id, user_id, file_name, title, description, created_at)
+	          VALUES ($1, $2, $3, $4, $5, $6)`
+	_, err := r.db.Exec(ctx, query, v.ID, v.UserID, v.FileName, v.Title, v.Description, v.CreatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("insert video failed: %w", err)
 	}
