@@ -26,6 +26,7 @@ message CreateUserRequest {
 
 message GetUserRequest {
   string username = 1;
+  string password = 2;
 }
 
 message UserResponse {
@@ -75,7 +76,8 @@ message VideoMetadataResponse {
   string user_id = 2;
   string title = 3;
   string description = 4;
-  string created_at = 6;
+  string created_at = 5;
+  string file_name = 6;
 }
 
 message Video3ListResponse {

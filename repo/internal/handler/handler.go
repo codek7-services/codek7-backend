@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lumbrjx/codek7/repo/internal/service"
 	"codek7/common/pb"
+	"github.com/lumbrjx/codek7/repo/internal/service"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -27,8 +27,9 @@ func NewRepoHandler(userSvc service.UserService, videoSvc service.VideoService) 
 	}
 }
 
+
 func (h *RepoHandler) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb.UserResponse, error) {
-	user, err := h.userService.CreateUser(ctx, req.Username)
+	user, err := h.userService.CreateUser(ctx, req.Password, req.Email, req.Username)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create user: %v", err)
 	}
@@ -40,6 +41,7 @@ func (h *RepoHandler) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 }
 
 func (h *RepoHandler) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.UserResponse, error) {
+	println("Fetching user with username:", req.Username)
 	user, err := h.userService.GetUser(ctx, req.Username)
 	if err != nil {
 		return nil, status.Errorf(codes.NotFound, "user not found: %v", err)
@@ -47,6 +49,7 @@ func (h *RepoHandler) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.
 	return &pb.UserResponse{
 		Id:        user.ID,
 		Username:  user.Username,
+		Password:  user.Password,
 		CreatedAt: user.CreatedAt.Format(time.RFC3339),
 	}, nil
 }
@@ -128,7 +131,7 @@ func (h *RepoHandler) UploadVideo(stream pb.RepoService_UploadVideoServer) error
 func (h *RepoHandler) isOriginalVideo(fileName string) bool {
 	// Original videos typically don't have resolution suffixes or are .mp4 without special naming
 	// Generated files have patterns like: videoID_360p.mp4, videoID/360/index.m3u8, etc.
-	
+
 	// Check for resolution patterns
 	resolutionPatterns := []string{"_144p.", "_240p.", "_360p.", "_480p.", "_720p.", "_1080p."}
 	for _, pattern := range resolutionPatterns {
@@ -136,7 +139,7 @@ func (h *RepoHandler) isOriginalVideo(fileName string) bool {
 			return false
 		}
 	}
-	
+
 	// Check for HLS patterns
 	hlsPatterns := []string{"/index.m3u8", "seg_", "_master.m3u8"}
 	for _, pattern := range hlsPatterns {
@@ -144,21 +147,41 @@ func (h *RepoHandler) isOriginalVideo(fileName string) bool {
 			return false
 		}
 	}
-	
+
 	// Check for .ts segments
 	if strings.HasSuffix(fileName, ".ts") {
 		return false
 	}
-	
+
 	// If none of the generated file patterns match, assume it's original
 	return true
 }
+func (h *RepoHandler) GetLast3UserVideos(ctx context.Context, req *pb.GetLast3UserVideosRequest) (*pb.Video3ListResponse, error) {
+	videos, err := h.videoService.GetLast3VideosByUser(ctx, req.UserId)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to fetch videos: %v", err)
+	}
 
+	resp := &pb.Video3ListResponse{}
+	for _, v := range videos {
+		resp.Videos = append(resp.Videos, &pb.VideoMetadataResponse{
+			Id:          v.ID,
+			UserId:      v.UserID,
+			Title:       v.Title,
+			Description: v.Description,
+			CreatedAt:   v.CreatedAt.Format(time.RFC3339),
+			FileName:    v.FileName,
+		})
+	}
+	return resp, nil
+}
 func (h *RepoHandler) GetUserVideos(ctx context.Context, req *pb.GetUserVideosRequest) (*pb.VideoListResponse, error) {
 	videos, err := h.videoService.GetVideosByUser(ctx, req.UserId)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to fetch videos: %v", err)
 	}
+
+	println("filename", videos[0].FileName)
 
 	resp := &pb.VideoListResponse{}
 	for _, v := range videos {
@@ -168,6 +191,7 @@ func (h *RepoHandler) GetUserVideos(ctx context.Context, req *pb.GetUserVideosRe
 			Title:       v.Title,
 			Description: v.Description,
 			CreatedAt:   v.CreatedAt.Format(time.RFC3339),
+			FileName:    v.FileName,
 		})
 	}
 	return resp, nil
@@ -183,6 +207,7 @@ func (h *RepoHandler) GetVideoByID(ctx context.Context, req *pb.GetVideoRequest)
 		UserId:      v.UserID,
 		Title:       v.Title,
 		Description: v.Description,
+		FileName:    v.FileName,
 		CreatedAt:   v.CreatedAt.Format(time.RFC3339),
 	}, nil
 }
@@ -214,7 +239,7 @@ func (h *RepoHandler) DownloadVideo(req *pb.DownloadVideoRequest, stream pb.Repo
 	const chunkSize = 512 * 1024 // 512 KB
 	n := len(content)
 	chunkNumber := int32(0)
-	
+
 	for i := 0; i < n; i += chunkSize {
 		end := i + chunkSize
 		if end > n {

@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"codek7/common/pb"
@@ -13,6 +14,7 @@ func (a API) Register(w http.ResponseWriter, r *http.Request) {
 	var user struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
+		Email    string `json:"email"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
@@ -20,9 +22,14 @@ func (a API) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	hashedPassword, err := utils.HashPassword(user.Password)
+	if err != nil {
+		http.Error(w, "Failed to register user the request", http.StatusInternalServerError)
+	}
 	ur, err := a.RepoClient.CreateUser(r.Context(), &pb.CreateUserRequest{
 		Username: user.Username,
-		Password: user.Password,
+		Password: hashedPassword,
+		Email:    user.Email,
 	})
 	if err != nil {
 		http.Error(w, "Failed to create user", http.StatusInternalServerError)
@@ -47,15 +54,23 @@ func (a API) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	hashedPassword, err := utils.HashPassword(user.Password)
+	if err != nil {
+		http.Error(w, "Failed to login user the request", http.StatusInternalServerError)
+	}
+	println("Username:", user.Username)
 	res, err := a.RepoClient.GetUser(r.Context(), &pb.GetUserRequest{
 		Username: user.Username,
 	})
 	if err != nil {
+		fmt.Println("Failed to get user: %v", err)
 		http.Error(w, "Failed to get user", http.StatusInternalServerError)
 		return
 	}
 
-	if res == nil || res.Password != user.Password {
+	fmt.Println("password:", res.Password)
+	fmt.Println("hashedPassword:", hashedPassword)
+	if res == nil || utils.CheckPasswordHash(user.Password, res.Password) == false {
 		http.Error(w, "Invalid username or password", http.StatusUnauthorized)
 		return
 	}
