@@ -555,7 +555,7 @@ pub async fn consume_video_chunks(
                                 let nsfw_resolution_paths = generate_and_upload_resolutions(
                                     &format!("{}.mp4", &video_id),
                                     &video_id,
-                                    RESOLUTIONS,
+                                    NSFW_RESOLUTIONS,
                                     rpc_client.clone(),
                                     &video_id,
                                     &title,
@@ -592,7 +592,7 @@ pub async fn consume_video_chunks(
                                 let _segment_paths = generate_and_upload_segments(
                                     &format!("{}.mp4", &video_id),
                                     &video_id,
-                                    NSFW_RESOLUTIONS,
+                                    RESOLUTIONS,
                                     rpc_client.clone(),
                                     &video_id,
                                     &title,
