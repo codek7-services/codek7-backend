@@ -15,13 +15,16 @@ import (
 	"github.com/lumbrjx/codek7/gateway/internal/api"
 	"github.com/lumbrjx/codek7/gateway/internal/infra"
 	"github.com/lumbrjx/codek7/gateway/internal/middlewares"
+	"github.com/lumbrjx/codek7/gateway/internal/watcher"
 	// "github.com/lai0xn/codek-gateway/internal/middlewares"
 )
 
 type Server struct {
-	router *chi.Mux
-	port   string
-	api    *api.API
+	router  *chi.Mux
+	port    string
+	api     *api.API
+	watcher *watcher.Watcher
+	hub     *watcher.Hub
 }
 
 // NewServer creates a new server instance
@@ -38,14 +41,34 @@ func NewServer(port string) *Server {
 	grpcClient := pb.NewRepoServiceClient(
 		infra.MakeGRPCClientConn(),
 	)
+
+	// Initialize WebSocket hub
+	hub := watcher.NewHub()
+
+	// Initialize watcher
+	watcherInstance, err := watcher.NewWatcher(hub)
+	if err != nil {
+		log.Fatalf("Failed to create watcher: %v", err)
+	}
+
 	s := &Server{
-		router: chi.NewRouter(),
-		port:   port,
-		api:    &api.API{Producer: kafkaProducer, RepoClient: grpcClient},
+		router:  chi.NewRouter(),
+		port:    port,
+		api:     &api.API{Producer: kafkaProducer, RepoClient: grpcClient, Hub: hub},
+		watcher: watcherInstance,
+		hub:     hub,
 	}
 
 	s.setupMiddleware()
 	s.setupRoutes()
+
+	// Start the hub in a goroutine
+	go hub.Run()
+
+	// Start the watcher in a goroutine
+	if err := watcherInstance.Start(); err != nil {
+		log.Fatalf("Failed to start watcher: %v", err)
+	}
 
 	return s
 }
@@ -81,19 +104,33 @@ func (s *Server) setupMiddleware() {
 func (s *Server) setupRoutes() {
 	// Health check endpoint
 	s.router.Get("/health", s.api.HealthCheck)
+	// Videos routes group
+	s.router.Route("/videos", func(r chi.Router) {
+		r.Use(middlewares.AuthMiddleware)
 
-	// Video-related routes . private routes , warpping them with auth middleware
-	videoRouter := chi.NewRouter()
-	videoRouter.Use(middlewares.AuthMiddleware) // Apply auth middleware to video setupRoutes
-	s.router.Mount("/videos", videoRouter)
-	videoRouter.Post("/upload", s.api.UploadFile)
-	videoRouter.Get("/{video_id}/download", s.api.DownloadVideo)
-	videoRouter.Get("/{video_id}", s.api.GetVideoByID)
-	videoRouter.Get("/user", s.api.GetUserVideos)
-	videoRouter.Get("/recent", s.api.GetRecentUserVideos)
-	// Static file serving
-	s.router.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
-	s.router.With().Get("/hls/*", s.api.StreamFromMinIO)
+		r.Post("/upload", s.api.UploadFile)
+		r.Get("/{video_id}/download", s.api.DownloadVideo)
+		r.Get("/{video_id}", s.api.GetVideoByID)
+		r.Get("/user/{user_id}", s.api.GetUserVideos)
+		r.Get("/recent/{user_id}", s.api.GetRecentUserVideos)
+	})
+	// Static and streaming routes with auth
+	s.router.Route("/static", func(r chi.Router) {
+		r.Use(middlewares.AuthMiddleware)
+		r.Handle("/*", http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
+	})
+
+	s.router.Route("/hls", func(r chi.Router) {
+		r.Use(middlewares.AuthMiddleware)
+		r.Get("/*", s.api.StreamFromMinIO)
+	})
+
+	// WebSocket endpoint for notifications with auth
+	s.router.Route("/ws", func(r chi.Router) {
+		r.Use(middlewares.AuthMiddleware)
+		r.Get("/notifications", s.api.WebSocketHandler)
+	})
+
 	// Auth routes
 	s.router.Post("/auth/login", s.api.Login)
 	s.router.Post("/auth/logout", s.api.Logout)
@@ -122,6 +159,13 @@ func (s *Server) Start() error {
 	<-quit
 
 	log.Println("Server shutting down...")
+
+	// Close watcher
+	if s.watcher != nil {
+		if err := s.watcher.Close(); err != nil {
+			log.Printf("Error closing watcher: %v", err)
+		}
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
