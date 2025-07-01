@@ -6,7 +6,7 @@ CREATE TABLE videos (
     user_id UUID NOT NULL,
     title TEXT NOT NULL,
     description TEXT,
-    final_name TEXT NOT NULL,
+    file_name TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );

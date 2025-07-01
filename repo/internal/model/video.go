@@ -10,7 +10,7 @@ type Video struct {
 	UserID      string    `json:"user_id" db:"user_id"`
 	Title       string    `json:"title" db:"title"`
 	Description string    `json:"description" db:"description"`
-	FinalName   string    `json:"final_name" db:"final_name"` // Original file name in MinIO
+	FileName    string    `json:"file_name" db:"file_name"` // Original file name in MinIO
 	CreatedAt   time.Time `json:"created_at" db:"created_at"`
 }
 

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/lumbrjx/codek7/repo/internal/model"
@@ -50,8 +51,9 @@ func (s *videoService) UploadOriginalVideo(ctx context.Context, userID, title, d
 	// Generate unique video ID
 	videoID := uuid.NewV4().String()
 
+	base := strings.TrimSuffix(fileName, ".mp4")
 	// Create the original filename with video ID
-	originalFileName := fmt.Sprintf("%s_original.mp4", videoID)
+	originalFileName := fmt.Sprintf("%s_original.mp4", base)
 
 	// Upload original file to MinIO
 	if err := s.store.Upload(ctx, originalFileName, content); err != nil {
@@ -64,7 +66,7 @@ func (s *videoService) UploadOriginalVideo(ctx context.Context, userID, title, d
 		UserID:      userID,
 		Title:       title,
 		Description: description,
-		FinalName:   originalFileName,
+		FileName:   originalFileName,
 		CreatedAt:   time.Now(),
 	}
 
@@ -141,7 +143,7 @@ func (s *videoService) RemoveVideo(ctx context.Context, videoID string) error {
 	}
 
 	// Remove original file
-	if err := s.store.Remove(ctx, video.FinalName); err != nil {
+	if err := s.store.Remove(ctx, video.FileName); err != nil {
 		return fmt.Errorf("remove original file from MinIO failed: %w", err)
 	}
 
