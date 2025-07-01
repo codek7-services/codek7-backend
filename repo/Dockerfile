@@ -1,40 +1,32 @@
-# Build stage
-FROM golang:1.24.4-alpine AS builder
+# Build the manager binary
+FROM golang:1.24.1 AS builder
+ARG TARGETOS
+ARG TARGETARCH
 
-# Install git for fetching dependencies
-RUN apk add --no-cache git
+WORKDIR /workspace
 
-# Set working directory
-WORKDIR /app
+# Copy the Go Modules manifests
+COPY repo/go.mod go.mod
+COPY repo/go.sum go.sum
+# Copy the `common` directory to the Docker image
+COPY common ./common
 
-# Copy go mod files
-COPY go.mod go.sum ./
+# Ensure the `replace` directive in go.mod points to the correct path
+RUN sed -i 's|replace codek7/common => ../common|replace codek7/common => ./common|' go.mod
 
-# Download dependencies
+# Download Go modules
 RUN go mod download
 
-# Copy source code
-COPY . .
+# Copy the source code into the Docker image
+COPY repo/internal ./internal
+COPY repo/pkg ./pkg
+COPY repo/cmd ./cmd
+COPY repo/db ./db
+# Build the Go binary
+RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o repo cmd/main.go
 
-# Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/main.go
+# Use a minimal base image for the final image
 
-# Final stage
-FROM alpine:latest
+CMD ["./repo"]
 
-# Install ca-certificates for HTTPS requests
-RUN apk --no-cache add ca-certificates
 
-WORKDIR /root/
-
-# Copy the binary from builder stage
-COPY --from=builder /app/main .
-
-# Copy .env file if needed (optional, better to use environment variables)
-COPY --from=builder /app/.env .
-
-# Expose the gRPC port
-EXPOSE 50051
-
-# Command to run the application
-CMD ["./main"]

@@ -1,6 +1,6 @@
 module github.com/lumbrjx/codek7/repo
 
-go 1.24.4
+go 1.24.1
 
 require (
 	codek7/common v0.0.0

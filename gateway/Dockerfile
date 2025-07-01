@@ -1,26 +1,31 @@
-# syntax=docker/dockerfile:1
+# Build the manager binary
+FROM golang:1.24.1 AS builder
+ARG TARGETOS
+ARG TARGETARCH
 
-FROM golang:1.24.1
+WORKDIR /workspace
 
-# Set destination for COPY
-WORKDIR /app
+# Copy the Go Modules manifests
+COPY gateway/go.mod go.mod
+COPY gateway/go.sum go.sum
+# Copy the `common` directory to the Docker image
+COPY common ./common
+
+# Ensure the `replace` directive in go.mod points to the correct path
+RUN sed -i 's|replace codek7/common => ../common|replace codek7/common => ./common|' go.mod
 
 # Download Go modules
-COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy the source code. Note the slash at the end, as explained in
-# https://docs.docker.com/reference/dockerfile/#copy
-COPY ./ ./
+# Copy the source code into the Docker image
+COPY gateway/internal ./internal
+COPY gateway/pkg ./pkg
+COPY gateway/cmd ./cmd
 
-# Build
-RUN CGO_ENABLED=0 GOOS=linux go build -o codek7 ./cmd/main.go 
-# Optional:
-# To bind to a TCP port, runtime parameters must be supplied to the docker command.
-# But we can document in the Dockerfile what ports
-# the application is going to listen on by default.
-# https://docs.docker.com/reference/dockerfile/#expose
-EXPOSE 8080
+# Build the Go binary
+RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o gateway cmd/main.go
 
-# Run
-CMD ["./codek7"]
+# Use a minimal base image for the final image
+
+CMD ["./gateway"]
+
