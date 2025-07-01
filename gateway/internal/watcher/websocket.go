@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/websocket"
 )
 
@@ -18,7 +19,7 @@ var upgrader = websocket.Upgrader{
 // HandleWebSocket handles WebSocket connections
 func (h *Hub) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	// Get user ID from path
-	userID := r.URL.Query().Get("user_id")
+	userID := chi.URLParam(r, "user_id")
 	if userID == "" {
 		http.Error(w, "user_id query parameter is required", http.StatusBadRequest)
 		return
