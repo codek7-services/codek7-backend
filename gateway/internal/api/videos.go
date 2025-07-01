@@ -38,7 +38,7 @@ func (a API) GetRecentUserVideos(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    res, err := a.RepoClient.GetLast3UserVideos(context.Background(), &pb.GetUserVideosRequest{UserId: userID})
+    res, err := a.RepoClient.GetLast3UserVideos(context.Background(), &pb.GetLast3UserVideosRequest{UserId: userID})
     if err != nil {
         http.Error(w, err.Error(), http.StatusInternalServerError)
         return
