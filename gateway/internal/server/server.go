@@ -1,6 +1,7 @@
 package server
 
 import (
+	"codek7/common/pb"
 	"context"
 	"log"
 	"net/http"
@@ -8,11 +9,12 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-  "codek7/common/pb"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/lumbrjx/codek7/gateway/internal/api"
 	"github.com/lumbrjx/codek7/gateway/internal/infra"
+	"github.com/lumbrjx/codek7/gateway/internal/middlewares"
 	// "github.com/lai0xn/codek-gateway/internal/middlewares"
 )
 
@@ -33,13 +35,13 @@ func NewServer(port string) *Server {
 		log.Fatalf("Error: %v", err)
 		os.Exit(1)
 	}
-  grpcClient := pb.NewRepoServiceClient(
-    infra.MakeGRPCClientConn(), 
-  ) 
+	grpcClient := pb.NewRepoServiceClient(
+		infra.MakeGRPCClientConn(),
+	)
 	s := &Server{
 		router: chi.NewRouter(),
 		port:   port,
-		api:    &api.API{Producer: kafkaProducer,RepoClient: grpcClient},
+		api:    &api.API{Producer: kafkaProducer, RepoClient: grpcClient},
 	}
 
 	s.setupMiddleware()
@@ -63,7 +65,7 @@ func (s *Server) setupMiddleware() {
 			w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "Accept, Authorization, Content-Type, X-CSRF-Token")
-      w.Header().Set("Access-Control-Allow-Credentials", "true") // ✅ correct
+			w.Header().Set("Access-Control-Allow-Credentials", "true") // ✅ correct
 
 			if r.Method == "OPTIONS" {
 				w.WriteHeader(http.StatusOK)
@@ -79,11 +81,17 @@ func (s *Server) setupMiddleware() {
 func (s *Server) setupRoutes() {
 	// Health check endpoint
 	s.router.Get("/health", s.api.HealthCheck)
-	s.router.Post("/videos/upload", s.api.UploadFile)
-	s.router.Get("/videos/{video_id}/download", s.api.DownloadVideo)
-	s.router.Get("/videos/{video_id}", s.api.GetVideoByID)
-	s.router.Get("/videos/user/{user_id}", s.api.GetUserVideos)
-	s.router.Get("/videos/recent/{user_id}", s.api.GetRecentUserVideos)
+
+	// Video-related routes . private routes , warpping them with auth middleware
+	videoRouter := chi.NewRouter()
+	videoRouter.Use(middlewares.AuthMiddleware) // Apply auth middleware to video setupRoutes
+	s.router.Mount("/videos", videoRouter)
+	videoRouter.Post("/upload", s.api.UploadFile)
+	videoRouter.Get("/{video_id}/download", s.api.DownloadVideo)
+	videoRouter.Get("/{video_id}", s.api.GetVideoByID)
+	videoRouter.Get("/user", s.api.GetUserVideos)
+	videoRouter.Get("/recent", s.api.GetRecentUserVideos)
+	// Static file serving
 	s.router.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
 	s.router.With().Get("/hls/*", s.api.StreamFromMinIO)
 	// Auth routes

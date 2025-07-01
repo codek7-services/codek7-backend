@@ -10,6 +10,7 @@ import (
 	"strconv"
 
 	"github.com/google/uuid"
+	"github.com/lumbrjx/codek7/gateway/pkg/utils"
 	"github.com/segmentio/kafka-go"
 )
 
@@ -19,10 +20,12 @@ func (a API) UploadFile(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"status":"error","message":"Failed to parse form"}`, http.StatusBadRequest)
 		return
 	}
-
-	// Get form fields
+	userID, ok := utils.GetUserID(r.Context())
+	if !ok {
+		http.Error(w, "User ID not found in context", http.StatusUnauthorized)
+		return
+	}
 	title := r.FormValue("title")
-	userID := r.FormValue("user_id")
 	description := r.FormValue("description")
 
 	if title == "" || userID == "" || description == "" {
@@ -66,7 +69,7 @@ func processFile(producer *kafka.Writer, filePath string, userID, title, descrip
 	defer os.Remove(filePath)
 
 	videoID := uuid.New().String()
-	sem := make(chan struct{}, 10)
+	sem := make(chan struct{}, 40)
 	chunkBuf := make([]byte, 32*1024)
 
 	f, err := os.Open(filePath)
@@ -111,9 +114,6 @@ func processFile(producer *kafka.Writer, filePath string, userID, title, descrip
 }
 
 func produceChunk(producer *kafka.Writer, videoID string, index int32, totalChunks int32, chunk []byte, filepath string, userID, title, description string) {
-	println("got user id: ", userID)
-	println("got title: ", title)
-	println("got description: ", description)
 	msg := kafka.Message{
 		Key:   []byte(videoID),
 		Value: chunk,
