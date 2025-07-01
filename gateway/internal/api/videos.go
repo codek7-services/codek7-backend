@@ -31,6 +31,21 @@ func (a API) GetVideoByID(w http.ResponseWriter, r *http.Request) {
 
     json.NewEncoder(w).Encode(res)
 }
+func (a API) GetRecentUserVideos(w http.ResponseWriter, r *http.Request) {
+    userID := chi.URLParam(r, "user_id")
+    if userID == "" {
+        http.Error(w, "missing user_id", http.StatusBadRequest)
+        return
+    }
+
+    res, err := a.RepoClient.GetLast3UserVideos(context.Background(), &pb.GetUserVideosRequest{UserId: userID})
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+   json.NewEncoder(w).Encode(res)
+}
 func (a API) GetUserVideos(w http.ResponseWriter, r *http.Request) {
     userID := chi.URLParam(r, "user_id")
     if userID == "" {
