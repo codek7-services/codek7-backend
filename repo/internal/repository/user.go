@@ -40,7 +40,7 @@ func (r *userRepo) CreateUser(ctx context.Context, username string) (*model.User
 }
 
 func (r *userRepo) GetUser(ctx context.Context, userID string) (*model.User, error) {
-	query := `SELECT id, username, created_at FROM users WHERE id = $1`
+	query := `SELECT id, username, created_at FROM users WHERE username = $1`
 	row := r.db.QueryRow(ctx, query, userID)
 
 	var user model.User

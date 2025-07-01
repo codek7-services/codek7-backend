@@ -26,6 +26,6 @@ func (s *userService) CreateUser(ctx context.Context, username string) (*model.U
 	return user, err
 }
 
-func (s *userService) GetUser(ctx context.Context, id string) (*model.User, error) {
-	return s.repo.GetUser(ctx, id)
+func (s *userService) GetUser(ctx context.Context, username string) (*model.User, error) {
+	return s.repo.GetUser(ctx, username)
 }

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/lumbrjx/codek7/repo/internal/service"
-	"github.com/lumbrjx/codek7/repo/pkg/pb"
+	"codek7/common/pb"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -40,7 +40,7 @@ func (h *RepoHandler) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 }
 
 func (h *RepoHandler) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.UserResponse, error) {
-	user, err := h.userService.GetUser(ctx, req.UserId)
+	user, err := h.userService.GetUser(ctx, req.Username)
 	if err != nil {
 		return nil, status.Errorf(codes.NotFound, "user not found: %v", err)
 	}

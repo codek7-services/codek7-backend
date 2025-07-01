@@ -10,7 +10,7 @@ import (
 	"github.com/lumbrjx/codek7/repo/internal/repository"
 	"github.com/lumbrjx/codek7/repo/internal/service"
 	"github.com/lumbrjx/codek7/repo/internal/storage"
-	"github.com/lumbrjx/codek7/repo/pkg/pb"
+	"codek7/common/pb"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
