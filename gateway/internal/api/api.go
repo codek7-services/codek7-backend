@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/lumbrjx/codek7/gateway/pb"
+	"codek7/common/pb"
 	"github.com/segmentio/kafka-go"
 )
 
