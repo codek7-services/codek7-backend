@@ -9,7 +9,10 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	google.golang.org/grpc v1.73.0
 	google.golang.org/protobuf v1.36.6
+  codek7/common v0.0.0
 )
+
+replace codek7/common => ../common
 
 require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
