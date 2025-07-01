@@ -1,8 +1,7 @@
 package api
 
 import (
-	"codek7/common/pb"
-
+	"github.com/lai0xn/codek-gateway/pb"
 	"github.com/segmentio/kafka-go"
 )
 

@@ -4,7 +4,7 @@ package repo;
 
 import "google/protobuf/empty.proto";
 
-option go_package = "codek7/common/pb";
+option go_package = "codek7/common/pb;pb";
 
 
 service RepoService {

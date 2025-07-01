@@ -117,4 +117,3 @@ func produceChunk(producer *kafka.Writer, videoID string, index int32, totalChun
 		fmt.Printf("✅ Sent chunk %d/%d to Kafka\n", index+1, totalChunks)
 	}
 }
-

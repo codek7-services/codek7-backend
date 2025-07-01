@@ -1,7 +1,6 @@
 package api
 
 import (
-	"codek7/common/pb"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -9,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/lai0xn/codek-gateway/pb"
 )
 
 func (a API) GetVideoByID(w http.ResponseWriter, r *http.Request) {
@@ -54,7 +54,7 @@ func (a API) DownloadVideo(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    stream, err := a.RepoClient.DownloadVideo(context.Background(), &pb.DownloadVideoRequest{VideoId: videoID})
+    stream, err := a.RepoClient.DownloadVideo(context.Background(), &pb.DownloadVideoRequest{FileName: videoID})
     if err != nil {
         http.Error(w, err.Error(), http.StatusInternalServerError)
         return
