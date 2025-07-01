@@ -60,9 +60,10 @@ func (s *Server) setupMiddleware() {
 	// CORS middleware
 	s.router.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "Accept, Authorization, Content-Type, X-CSRF-Token")
+      w.Header().Set("Access-Control-Allow-Credentials", "true") // ✅ correct
 
 			if r.Method == "OPTIONS" {
 				w.WriteHeader(http.StatusOK)
@@ -82,6 +83,7 @@ func (s *Server) setupRoutes() {
 	s.router.Get("/videos/{video_id}/download", s.api.DownloadVideo)
 	s.router.Get("/videos/{video_id}", s.api.GetVideoByID)
 	s.router.Get("/videos/user/{user_id}", s.api.GetUserVideos)
+	s.router.Get("/videos/recent/{user_id}", s.api.GetRecentUserVideos)
 	s.router.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
 	s.router.With().Get("/hls/*", s.api.StreamFromMinIO)
 	// Auth routes

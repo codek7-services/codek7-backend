@@ -36,11 +36,11 @@ func (r *videoRepo) CreateVideo(ctx context.Context, v *model.Video) (*model.Vid
 }
 
 func (r *videoRepo) GetVideoByID(ctx context.Context, videoID string) (*model.Video, error) {
-	query := `SELECT id, user_id, title, description, created_at FROM videos WHERE id=$1`
+	query := `SELECT id, user_id, title, description, created_at, file_name FROM videos WHERE id=$1`
 	row := r.db.QueryRow(ctx, query, videoID)
 
 	var v model.Video
-	err := row.Scan(&v.ID, &v.UserID, &v.Title, &v.Description, &v.CreatedAt)
+	err := row.Scan(&v.ID, &v.UserID, &v.Title, &v.Description, &v.CreatedAt, &v.FileName)
 	if err != nil {
 		return nil, fmt.Errorf("get video failed: %w", err)
 	}
@@ -48,7 +48,7 @@ func (r *videoRepo) GetVideoByID(ctx context.Context, videoID string) (*model.Vi
 }
 func (r *videoRepo) GetLast3VideosByUser(ctx context.Context, userID string) ([]*model.Video, error) {
 	query := `
-SELECT id, user_id, title, description, final_name, created_at
+SELECT id, user_id, title, description, created_at, file_name
 FROM videos
 WHERE user_id = $1
 ORDER BY created_at DESC
@@ -63,7 +63,7 @@ LIMIT 3
 	var videos []*model.Video
 	for rows.Next() {
 		var v model.Video
-		if err := rows.Scan(&v.ID, &v.UserID, &v.Title, &v.Description, &v.CreatedAt); err != nil {
+		if err := rows.Scan(&v.ID, &v.UserID, &v.Title, &v.Description, &v.CreatedAt, &v.FileName); err != nil {
 			return nil, err
 		}
 		videos = append(videos, &v)
@@ -71,7 +71,7 @@ LIMIT 3
 	return videos, nil
 }
 func (r *videoRepo) GetVideosByUser(ctx context.Context, userID string) ([]*model.Video, error) {
-	query := `SELECT id, user_id, title, description, created_at FROM videos WHERE user_id=$1 ORDER BY created_at DESC`
+	query := `SELECT id, user_id, title, description, created_at, file_name FROM videos WHERE user_id=$1 ORDER BY created_at DESC`
 	rows, err := r.db.Query(ctx, query, userID)
 	if err != nil {
 		return nil, fmt.Errorf("query videos failed: %w", err)
@@ -81,7 +81,7 @@ func (r *videoRepo) GetVideosByUser(ctx context.Context, userID string) ([]*mode
 	var videos []*model.Video
 	for rows.Next() {
 		var v model.Video
-		if err := rows.Scan(&v.ID, &v.UserID, &v.Title, &v.Description, &v.CreatedAt); err != nil {
+		if err := rows.Scan(&v.ID, &v.UserID, &v.Title, &v.Description, &v.CreatedAt, &v.FileName); err != nil {
 			return nil, err
 		}
 		videos = append(videos, &v)
