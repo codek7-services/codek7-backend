@@ -13,7 +13,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/lai0xn/codek-gateway/internal/api"
 	"github.com/lai0xn/codek-gateway/internal/infra"
-	"github.com/lai0xn/codek-gateway/internal/middlewares"
+	// "github.com/lai0xn/codek-gateway/internal/middlewares"
 )
 
 type Server struct {
@@ -34,6 +34,9 @@ func NewServer(port string) *Server {
 		os.Exit(1)
 	}
 
+	if err != nil {
+		log.Fatalf("Error: %v", err)
+	}
 	s := &Server{
 		router: chi.NewRouter(),
 		port:   port,
@@ -54,7 +57,7 @@ func (s *Server) setupMiddleware() {
 	s.router.Use(middleware.RealIP)
 	s.router.Use(middleware.SetHeader("Content-Type", "application/json"))
 	s.router.Use(middleware.Timeout(60 * time.Second))
-	s.router.Use(middlewares.RateLimitMiddleware(infra.GetRDB(), 10, time.Minute*1))
+	// s.router.Use(middlewares.RateLimitMiddleware(infra.GetRDB(), 10, time.Minute*1))
 	// CORS middleware
 	s.router.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -63,6 +66,7 @@ func (s *Server) setupMiddleware() {
 			w.Header().Set("Access-Control-Allow-Headers", "Accept, Authorization, Content-Type, X-CSRF-Token")
 
 			if r.Method == "OPTIONS" {
+				w.WriteHeader(http.StatusOK)
 				return
 			}
 
@@ -76,14 +80,14 @@ func (s *Server) setupRoutes() {
 	// Health check endpoint
 	s.router.Get("/health", s.api.HealthCheck)
 	s.router.Post("/videos/upload", s.api.UploadFile)
-  s.router.Get("/videos/{video_id}/download",s.api.DownloadVideo)
-  s.router.Get("/videos/{video_id}",s.api.GetVideoByID)
+	s.router.Get("/videos/{video_id}/download", s.api.DownloadVideo)
+	s.router.Get("/videos/{video_id}", s.api.GetVideoByID)
 	s.router.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
-
+	s.router.Get("/hls/*", s.api.StreamFromMinIO)
 	// Auth routes
-	s.router.Post("/auth/login", s.api.LoginHandler)
-	s.router.Post("/auth/logout", s.api.LogoutHandler)
-	s.router.Post("/auth/register", s.api.RegisterHandler)
+	// s.router.Post("/auth/login", s.api.LoginHandler)
+	// s.router.Post("/auth/logout", s.api.LogoutHandler)
+	// s.router.Post("/auth/register", s.api.RegisterHandler)
 }
 
 // Start starts the HTTP server
