@@ -111,8 +111,8 @@ func (s *Server) setupRoutes() {
 		r.Post("/upload", s.api.UploadFile)
 		r.Get("/{video_id}/download", s.api.DownloadVideo)
 		r.Get("/{video_id}", s.api.GetVideoByID)
-		r.Get("/user/{user_id}", s.api.GetUserVideos)
-		r.Get("/recent/{user_id}", s.api.GetRecentUserVideos)
+		r.Get("/user", s.api.GetUserVideos)
+		r.Get("/recent", s.api.GetRecentUserVideos)
 	})
 	// Static and streaming routes with auth
 	s.router.Route("/static", func(r chi.Router) {
@@ -121,7 +121,6 @@ func (s *Server) setupRoutes() {
 	})
 
 	s.router.Route("/hls", func(r chi.Router) {
-		r.Use(middlewares.AuthMiddleware)
 		r.Get("/*", s.api.StreamFromMinIO)
 	})
 
