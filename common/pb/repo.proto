@@ -3,9 +3,7 @@ syntax = "proto3";
 package repo;
 
 import "google/protobuf/empty.proto";
-
-option go_package = "codek7/common/pb;pb";
-
+option go_package = "github.com/lumbrjx/codek7/repo/pkg/pb/";
 
 service RepoService {
   // User operations
@@ -14,6 +12,7 @@ service RepoService {
   // Video operations
   rpc UploadVideo(stream UploadVideoRequest) returns (VideoMetadataResponse);
   rpc GetUserVideos(GetUserVideosRequest) returns (VideoListResponse);
+  rpc GetLast3UserVideos(GetLast3UserVideosRequest) returns (Video3ListResponse);
   rpc GetVideoByID(GetVideoRequest) returns (VideoMetadataResponse);
   rpc DownloadVideo(DownloadVideoRequest) returns (stream VideoFileResponse);
   rpc RemoveVideo(GetVideoRequest) returns (google.protobuf.Empty);
@@ -56,7 +55,9 @@ message VideoChunk {
   int32 chunk_number = 2;
   string file_name = 3;
 }
-
+message GetLast3UserVideosRequest {
+  string user_id = 1;
+}
 message GetUserVideosRequest {
   string user_id = 1;
 }
@@ -77,6 +78,9 @@ message VideoMetadataResponse {
   string created_at = 6;
 }
 
+message Video3ListResponse {
+  repeated VideoMetadataResponse videos = 1;
+}
 message VideoListResponse {
   repeated VideoMetadataResponse videos = 1;
 }

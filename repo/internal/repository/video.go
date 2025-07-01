@@ -13,6 +13,7 @@ type VideoRepository interface {
 	CreateVideo(ctx context.Context, v *model.Video) (*model.Video, error)
 	GetVideoByID(ctx context.Context, videoID string) (*model.Video, error)
 	GetVideosByUser(ctx context.Context, userID string) ([]*model.Video, error)
+	GetLast3VideosByUser(ctx context.Context, userID string) ([]*model.Video, error)
 	DeleteVideo(ctx context.Context, videoID string) error
 }
 
@@ -45,7 +46,30 @@ func (r *videoRepo) GetVideoByID(ctx context.Context, videoID string) (*model.Vi
 	}
 	return &v, nil
 }
+func (r *videoRepo) GetLast3VideosByUser(ctx context.Context, userID string) ([]*model.Video, error) {
+	query := `
+SELECT id, user_id, title, description, final_name, created_at
+FROM videos
+WHERE user_id = $1
+ORDER BY created_at DESC
+LIMIT 3
+`
+	rows, err := r.db.Query(ctx, query, userID)
+	if err != nil {
+		return nil, fmt.Errorf("query videos failed: %w", err)
+	}
+	defer rows.Close()
 
+	var videos []*model.Video
+	for rows.Next() {
+		var v model.Video
+		if err := rows.Scan(&v.ID, &v.UserID, &v.Title, &v.Description, &v.CreatedAt); err != nil {
+			return nil, err
+		}
+		videos = append(videos, &v)
+	}
+	return videos, nil
+}
 func (r *videoRepo) GetVideosByUser(ctx context.Context, userID string) ([]*model.Video, error) {
 	query := `SELECT id, user_id, title, description, created_at FROM videos WHERE user_id=$1 ORDER BY created_at DESC`
 	rows, err := r.db.Query(ctx, query, userID)

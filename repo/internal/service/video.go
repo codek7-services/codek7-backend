@@ -21,7 +21,7 @@ type VideoService interface {
 	// Query operations
 	GetVideoByID(ctx context.Context, videoID string) (*model.Video, error)
 	GetVideosByUser(ctx context.Context, userID string) ([]*model.Video, error)
-
+	GetLast3VideosByUser(ctx context.Context, userID string) ([]*model.Video, error)
 	// Download operations
 	DownloadFile(ctx context.Context, fileName string) ([]byte, string, error)
 
@@ -102,6 +102,12 @@ func (s *videoService) GetVideoByID(ctx context.Context, videoID string) (*model
 	return s.repo.GetVideoByID(ctx, videoID)
 }
 
+func (s *videoService) GetLast3VideosByUser(ctx context.Context, userID string) ([]*model.Video, error) {
+	if userID == "" {
+		return nil, fmt.Errorf("userID cannot be empty")
+	}
+	return s.repo.GetLast3VideosByUser(ctx, userID)
+}
 func (s *videoService) GetVideosByUser(ctx context.Context, userID string) ([]*model.Video, error) {
 	if userID == "" {
 		return nil, fmt.Errorf("userID cannot be empty")
